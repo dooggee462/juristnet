@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lm_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-lmuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-lmpassword}
+      POSTGRES_DB: ${DB_NAME:-legalmarketplace}
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lmuser -d legalmarketplace']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lm_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-lmuser}:${DB_PASSWORD:-lmpassword}@postgres:5432/${DB_NAME:-legalmarketplace}
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwt}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      PORT: 4000
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lm_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+      VITE_STRIPE_PK: ${VITE_STRIPE_PK}
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
