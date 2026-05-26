@@ -8,8 +8,8 @@ datasource db {
 }
 
 model Jurist {
-  id                 String        @id @default(cuid())
-  email              String        @unique
+  id                 String           @id @default(cuid())
+  email              String           @unique
   passwordHash       String
   firstName          String
   lastName           String
@@ -17,26 +17,27 @@ model Jurist {
   postalCode         String
   streetAddress      String
   phoneNumber        String
-  bio                String?       @db.Text
+  bio                String?          @db.Text
   areasOfExpertise   String[]
   spokenLanguages    String[]
   city               String?
   region             String?
   avatarUrl          String?
-  isVerified         Boolean       @default(false)
-  isActive           Boolean       @default(true)
-  profileViews       Int           @default(0)
-  phoneClicks        Int           @default(0)
-  stripeCustomerId   String?       @unique
-  stripeSubId        String?       @unique
-  subStatus          SubStatus     @default(INACTIVE)
+  isVerified         Boolean          @default(false)
+  isActive           Boolean          @default(true)
+  profileViews       Int              @default(0)
+  phoneClicks        Int              @default(0)
+  stripeCustomerId   String?          @unique
+  stripeSubId        String?          @unique
+  subStatus          SubStatus        @default(INACTIVE)
   subCurrentEnd      DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
   listings           Listing[]
   reviews            Review[]
-  messagesReceived   Message[]     @relation("ReceivedMessages")
+  messagesReceived   Message[]        @relation("ReceivedMessages")
   analytics          AnalyticsEvent[]
+  conversations      Conversation[]
 }
 
 model Listing {
@@ -56,37 +57,62 @@ model Listing {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  listingId String
-  juristId  String
-  clientName String
+  id          String   @id @default(cuid())
+  listingId   String
+  juristId    String
+  clientName  String
   clientEmail String?
-  rating    Int
-  body      String   @db.Text
-  createdAt DateTime @default(now())
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  jurist    Jurist   @relation(fields: [juristId], references: [id], onDelete: Cascade)
+  rating      Int
+  body        String   @db.Text
+  createdAt   DateTime @default(now())
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  jurist      Jurist   @relation(fields: [juristId], references: [id], onDelete: Cascade)
 }
 
 model Message {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   juristId    String
   senderName  String
   senderEmail String
   subject     String
-  body        String      @db.Text
-  isRead      Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  jurist      Jurist      @relation("ReceivedMessages", fields: [juristId], references: [id], onDelete: Cascade)
+  body        String   @db.Text
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  jurist      Jurist   @relation("ReceivedMessages", fields: [juristId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id           String        @id @default(cuid())
+  juristId     String
+  clientName   String
+  clientEmail  String
+  lastMessage  String?       @db.Text
+  lastAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  jurist       Jurist        @relation(fields: [juristId], references: [id], onDelete: Cascade)
+  chatMessages ChatMessage[]
+
+  @@unique([juristId, clientEmail])
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderType     SenderType
+  senderName     String
+  body           String       @db.Text
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
 
 model AnalyticsEvent {
-  id        String        @id @default(cuid())
+  id        String    @id @default(cuid())
   juristId  String
   type      EventType
   metadata  Json?
-  createdAt DateTime      @default(now())
-  jurist    Jurist        @relation(fields: [juristId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  jurist    Jurist    @relation(fields: [juristId], references: [id], onDelete: Cascade)
 }
 
 model StripeWebhookEvent {
@@ -109,4 +135,9 @@ enum EventType {
   PHONE_CLICK
   MESSAGE_SENT
   LISTING_VIEW
+}
+
+enum SenderType {
+  CLIENT
+  JURIST
 }
