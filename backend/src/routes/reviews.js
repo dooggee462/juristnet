@@ -23,7 +23,7 @@ router.post('/listing/:listingId', validate, async (req, res, next) => {
     const review = await prisma.review.create({
       data: {
         listingId: req.params.listingId,
-        juristId: listing.juristId,
+        expertId: listing.expertId,
         clientName,
         clientEmail,
         rating: Number(rating),
@@ -37,10 +37,10 @@ router.post('/listing/:listingId', validate, async (req, res, next) => {
   }
 });
 
-router.get('/jurist/:juristId', async (req, res, next) => {
+router.get('/expert/:expertId', async (req, res, next) => {
   try {
     const reviews = await prisma.review.findMany({
-      where: { juristId: req.params.juristId },
+      where: { expertId: req.params.expertId },
       orderBy: { createdAt: 'desc' },
     });
     const avg = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;

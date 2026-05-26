@@ -1,10 +1,10 @@
 {
-  "name": "juristnet",
+  "name": "expert-md",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "cd backend && npm install && npx prisma generate && cd ../frontend && npm install && npm run build",
-    "start": "cd backend && npx prisma db push --accept-data-loss && node src/index.js"
+    "start": "cd backend && npx prisma db push --accept-data-loss && node src/utils/seedCategories.js && node src/index.js"
   },
   "engines": {
     "node": ">=20"

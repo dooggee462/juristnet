@@ -1,8 +1,27 @@
 import { useNavigate } from 'react-router-dom';
-import { Scale, Users, ShieldCheck, Search, Star, MessageSquare, ArrowRight, Zap, Globe, Lock } from 'lucide-react';
+import { Sparkles, Users, ShieldCheck, Search, Star, MessageSquare, ArrowRight, Zap, Globe, Lock } from 'lucide-react';
+import { CATEGORIES } from '../lib/constants.js';
+
+const CATEGORY_ICONS = {
+  'Juridic': '⚖️',
+  'Medical': '🏥',
+  'Construcții': '🏗️',
+  'IT': '💻',
+  'Contabilitate & Business': '📊',
+  'Educație': '📚',
+  'Auto': '🚗',
+  'Frumusețe': '✨',
+  'Evenimente': '📸',
+  'Casnice': '🏠',
+  'Agricultură & Animale': '🌱',
+};
 
 export default function Landing() {
   const navigate = useNavigate();
+
+  const handleCategoryClick = (slug) => {
+    navigate(`/experti?category=${slug}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#0f0f13] text-white overflow-hidden">
@@ -17,12 +36,12 @@ export default function Landing() {
         <header className="flex items-center justify-between mb-16">
           <div className="flex items-center gap-2.5">
             <span className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center glow-brand">
-              <Scale size={18} className="text-white" />
+              <Sparkles size={18} className="text-white" />
             </span>
-            <span className="text-xl font-bold text-gradient">JuristNet</span>
+            <span className="text-xl font-bold text-gradient">expert.md</span>
           </div>
           <span className="text-sm text-white/40 glass px-3 py-1.5 rounded-full border border-white/08">
-            Platforma nr. 1 de servicii juridice din România
+            Platforma nr. 1 de experți din Moldova
           </span>
         </header>
 
@@ -30,22 +49,22 @@ export default function Landing() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-sm text-brand-300 mb-6 border border-brand-500/20">
             <Zap size={14} className="text-brand-400" />
-            Acces rapid la expertiză juridică
+            Experți verificați în Moldova
           </div>
           <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 leading-tight">
-            Găsiți juristul<br />
-            <span className="text-gradient">potrivit pentru dvs.</span>
+            Găsește expertul<br />
+            <span className="text-gradient">potrivit în Moldova</span>
           </h1>
           <p className="text-lg text-white/50 max-w-xl mx-auto">
-            Conectăm clienții cu juriști verificați din toată România. Rapid, sigur și transparent.
+            Specialiști verificați în juridic, medical, construcții, IT și multe altele.
           </p>
         </div>
 
         {/* Primary CTA — Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10 max-w-4xl mx-auto">
           {/* Client path */}
           <button
-            onClick={() => navigate('/anunturi')}
+            onClick={() => navigate('/experti')}
             className="bento-card group p-8 text-left cursor-pointer relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
@@ -55,25 +74,25 @@ export default function Landing() {
               </div>
               <h2 className="text-2xl font-bold mb-2">Intră ca Client</h2>
               <p className="text-white/50 text-sm mb-6 leading-relaxed">
-                Browsați anunțuri, găsiți juristul ideal și luați legătura instant. Fără cont necesar.
+                Caută experți, consultă profilurile și ia legătura instant. Fără cont necesar.
               </p>
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-400 group-hover:gap-3 transition-all">
-                Caută juriști <ArrowRight size={16} />
+                Caută experți <ArrowRight size={16} />
               </span>
             </div>
           </button>
 
-          {/* Jurist path */}
+          {/* Expert path */}
           <button
-            onClick={() => navigate('/jurist/login')}
+            onClick={() => navigate('/expert/login')}
             className="bento-card group p-8 text-left cursor-pointer relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-brand-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
             <div className="relative">
               <div className="w-12 h-12 rounded-2xl bg-brand-500/15 flex items-center justify-center mb-5 group-hover:bg-brand-500/25 transition-colors">
-                <Scale size={22} className="text-brand-400" />
+                <Sparkles size={22} className="text-brand-400" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Intră ca Jurist</h2>
+              <h2 className="text-2xl font-bold mb-2">Intră ca Expert</h2>
               <p className="text-white/50 text-sm mb-6 leading-relaxed">
                 Creați-vă profilul profesional, publicați anunțuri și atrageți clienți noi cu un abonament lunar.
               </p>
@@ -84,6 +103,23 @@ export default function Landing() {
           </button>
         </div>
 
+        {/* Categories Grid */}
+        <div className="mb-16">
+          <h2 className="text-center text-lg font-semibold text-white/60 mb-6">Caută după domeniu</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-w-5xl mx-auto">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.slug}
+                onClick={() => handleCategoryClick(cat.slug)}
+                className="bento-card p-4 flex flex-col items-center gap-2 cursor-pointer group hover:border-brand-500/40 transition-all"
+              >
+                <span className="text-2xl">{CATEGORY_ICONS[cat.name] || '🔹'}</span>
+                <span className="text-xs font-medium text-white/70 group-hover:text-white text-center leading-tight">{cat.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Feature Bento */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto mb-16">
           {/* Wide card */}
@@ -91,10 +127,10 @@ export default function Landing() {
             <Search size={20} className="text-brand-400 mb-3" />
             <h3 className="font-semibold mb-1.5">Filtrare avansată</h3>
             <p className="text-sm text-white/45 leading-relaxed">
-              Căutați după domeniu de drept, oraș, regiune sau limbi vorbite. Rezultate relevante instant.
+              Căutați după domeniu, oraș sau limbi vorbite. Experți din toată Moldova.
             </p>
             <div className="flex flex-wrap gap-2 mt-4">
-              {['Drept penal', 'Dreptul familiei', 'Drept comercial', 'Drept civil'].map((d) => (
+              {['Juridic', 'Medical', 'IT', 'Construcții'].map((d) => (
                 <span key={d} className="text-xs px-2.5 py-1 rounded-full bg-white/05 border border-white/08 text-white/60">{d}</span>
               ))}
             </div>
@@ -103,15 +139,15 @@ export default function Landing() {
           {/* Verified */}
           <div className="bento-card p-6">
             <ShieldCheck size={20} className="text-emerald-400 mb-3" />
-            <h3 className="font-semibold mb-1.5">Juriști verificați</h3>
+            <h3 className="font-semibold mb-1.5">Experți verificați</h3>
             <p className="text-sm text-white/45">
-              Badge-ul de verificare confirmă licența și acreditările fiecărui specialist.
+              Badge-ul de verificare confirmă acreditările fiecărui specialist.
             </p>
           </div>
 
           {/* Reviews */}
           <div className="bento-card p-6">
-            <Star size={20} className="text-gold-400 mb-3" />
+            <Star size={20} className="text-yellow-400 mb-3" />
             <h3 className="font-semibold mb-1.5">Recenzii reale</h3>
             <p className="text-sm text-white/45">
               Evaluări de la clienți reali pentru alegeri informate.
@@ -123,7 +159,7 @@ export default function Landing() {
             <MessageSquare size={20} className="text-blue-400 mb-3" />
             <h3 className="font-semibold mb-1.5">Mesaje directe</h3>
             <p className="text-sm text-white/45">
-              Contactați juristul direct din platformă, fără a expune date personale.
+              Contactați expertul direct din platformă, în timp real.
             </p>
           </div>
 
@@ -132,7 +168,7 @@ export default function Landing() {
             <Globe size={20} className="text-purple-400 mb-3" />
             <h3 className="font-semibold mb-1.5">Multilingv</h3>
             <p className="text-sm text-white/45">
-              Găsiți juriști care vorbesc limba dvs. maternă.
+              Găsiți experți care vorbesc română, rusă sau engleză.
             </p>
           </div>
 
@@ -140,7 +176,7 @@ export default function Landing() {
           <div className="bento-card p-6 md:col-span-2 flex items-center gap-6">
             <div className="text-center">
               <div className="text-3xl font-black text-gradient">500+</div>
-              <div className="text-xs text-white/40 mt-1">Juriști activi</div>
+              <div className="text-xs text-white/40 mt-1">Experți activi</div>
             </div>
             <div className="w-px h-12 bg-white/10" />
             <div className="text-center">

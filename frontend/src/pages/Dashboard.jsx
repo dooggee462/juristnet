@@ -4,7 +4,7 @@ import { Eye, Phone, MessageSquare, TrendingUp, CreditCard, Plus, Trash2, Toggle
 import Navbar from '../components/layout/Navbar.jsx';
 import { SubBadge, VerifiedBadge } from '../components/ui/Badge.jsx';
 import { useAuthStore } from '../store/authStore.js';
-import { EXPERTISE_OPTIONS, MOLDOVA_REGIONS } from '../lib/constants.js';
+import { CATEGORIES, MOLDOVA_REGIONS } from '../lib/constants.js';
 import api from '../lib/api.js';
 
 function StatCard({ icon: Icon, label, value, sub, color = 'brand' }) {
@@ -26,7 +26,7 @@ function StatCard({ icon: Icon, label, value, sub, color = 'brand' }) {
   );
 }
 
-function AvatarUpload({ currentUrl, juristName, onUploaded }) {
+function AvatarUpload({ currentUrl, expertName, onUploaded }) {
   const fileRef = useRef();
   const [preview, setPreview] = useState(currentUrl);
   const [uploading, setUploading] = useState(false);
@@ -49,7 +49,7 @@ function AvatarUpload({ currentUrl, juristName, onUploaded }) {
     }
   };
 
-  const initials = juristName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = expertName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <div className="relative w-20 h-20 group cursor-pointer" onClick={() => fileRef.current?.click()}>
@@ -67,11 +67,14 @@ function AvatarUpload({ currentUrl, juristName, onUploaded }) {
 }
 
 function NewListingModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({ title: '', description: '', expertise: [], languages: [], city: '', region: '' });
+  const [form, setForm] = useState({ title: '', description: '', category: '', expertise: [], languages: [], city: '', region: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const toggle = (k, v) => setForm(p => ({ ...p, [k]: p[k].includes(v) ? p[k].filter(x => x !== v) : [...p[k], v] }));
+
+  const selectedCategory = CATEGORIES.find((c) => c.name === form.category);
+  const subProfessions = selectedCategory?.subProfessions ?? [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,6 +99,14 @@ function NewListingModal({ onClose, onCreated }) {
           <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Descriere serviciu..." rows={4} required
             className="w-full bg-white/05 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-brand-500/50 resize-none" />
           <div>
+            <label className="block text-xs text-white/40 mb-2">Categorie</label>
+            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value, expertise: [] }))}
+              className="w-full bg-white/05 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50">
+              <option value="">Selectați categoria</option>
+              {CATEGORIES.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs text-white/40 mb-2">Localitate / Raion</label>
             <select value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))}
               className="w-full bg-white/05 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50">
@@ -103,15 +114,17 @@ function NewListingModal({ onClose, onCreated }) {
               {MOLDOVA_REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
-          <div>
-            <p className="text-xs text-white/40 mb-2">Domenii</p>
-            <div className="flex flex-wrap gap-2">
-              {EXPERTISE_OPTIONS.map(e => (
-                <button key={e} type="button" onClick={() => toggle('expertise', e)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${form.expertise.includes(e) ? 'bg-brand-600/30 border-brand-500/50 text-brand-300' : 'bg-white/05 border-white/10 text-white/50'}`}>{e}</button>
-              ))}
+          {subProfessions.length > 0 && (
+            <div>
+              <p className="text-xs text-white/40 mb-2">Specializări</p>
+              <div className="flex flex-wrap gap-2">
+                {subProfessions.map(sp => (
+                  <button key={sp} type="button" onClick={() => toggle('expertise', sp)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${form.expertise.includes(sp) ? 'bg-brand-600/30 border-brand-500/50 text-brand-300' : 'bg-white/05 border-white/10 text-white/50'}`}>{sp}</button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           {error && <p className="text-red-400 text-xs">{error}</p>}
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-white/05 text-sm text-white/60">Anulează</button>
@@ -129,7 +142,7 @@ function NewListingModal({ onClose, onCreated }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { jurist, fetchMe } = useAuthStore();
+  const { expert, fetchMe } = useAuthStore();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNewListing, setShowNewListing] = useState(false);
@@ -153,8 +166,8 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (jurist?.avatarUrl) setAvatarUrl(jurist.avatarUrl);
-  }, [jurist]);
+    if (expert?.avatarUrl) setAvatarUrl(expert.avatarUrl);
+  }, [expert]);
 
   const handleSubscribe = async () => {
     setSubLoading(true);
@@ -205,16 +218,19 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <AvatarUpload
               currentUrl={avatarUrl}
-              juristName={`${jurist?.firstName} ${jurist?.lastName}`}
+              expertName={`${expert?.firstName} ${expert?.lastName}`}
               onUploaded={(url) => { setAvatarUrl(url); fetchMe(); }}
             />
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold">{jurist?.firstName} {jurist?.lastName}</h1>
+                <h1 className="text-2xl font-bold">{expert?.firstName} {expert?.lastName}</h1>
                 {data?.isVerified && <VerifiedBadge size="md" />}
               </div>
-              <p className="text-white/40 text-sm">{jurist?.email}</p>
-              <p className="text-xs text-white/25 mt-0.5">Click pe poză pentru a schimba avatarul</p>
+              <p className="text-white/40 text-sm">{expert?.email}</p>
+              {expert?.category && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-300 border border-brand-500/20 inline-block mt-1">{expert.category}</span>
+              )}
+              <p className="text-xs text-white/25 mt-1">Click pe poză pentru a schimba avatarul</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

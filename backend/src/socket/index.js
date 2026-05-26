@@ -2,14 +2,14 @@ import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma.js';
 
 export function initSocket(io) {
-  // Middleware: identify jurist (JWT) or client (email/name)
+  // Middleware: identify expert (JWT) or client (email/name)
   io.use((socket, next) => {
     const { token, clientEmail, clientName } = socket.handshake.auth;
     if (token) {
       try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        socket.juristId = payload.id;
-        socket.role = 'jurist';
+        socket.expertId = payload.id;
+        socket.role = 'expert';
         return next();
       } catch {
         return next(new Error('Token invalid'));
@@ -25,10 +25,10 @@ export function initSocket(io) {
   });
 
   io.on('connection', async (socket) => {
-    // Jurist: join all their conversation rooms automatically
-    if (socket.role === 'jurist') {
+    // Expert: join all their conversation rooms automatically
+    if (socket.role === 'expert') {
       const convs = await prisma.conversation.findMany({
-        where: { juristId: socket.juristId },
+        where: { expertId: socket.expertId },
         select: { id: true },
       });
       convs.forEach((c) => socket.join(`conv_${c.id}`));
@@ -39,8 +39,7 @@ export function initSocket(io) {
       const conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
       if (!conv) return;
 
-      // Validate access
-      if (socket.role === 'jurist' && conv.juristId !== socket.juristId) return;
+      if (socket.role === 'expert' && conv.expertId !== socket.expertId) return;
       if (socket.role === 'client' && conv.clientEmail !== socket.clientEmail) return;
 
       socket.join(`conv_${conversationId}`);
@@ -54,29 +53,19 @@ export function initSocket(io) {
       const conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
       if (!conv) return;
 
-      // Validate access
-      if (socket.role === 'jurist' && conv.juristId !== socket.juristId) return;
+      if (socket.role === 'expert' && conv.expertId !== socket.expertId) return;
       if (socket.role === 'client' && conv.clientEmail !== socket.clientEmail) return;
 
-      const senderType = socket.role === 'jurist' ? 'JURIST' : 'CLIENT';
-      const senderName = socket.role === 'jurist'
-        ? (await prisma.jurist.findUnique({ where: { id: socket.juristId }, select: { firstName: true, lastName: true } })).then
-          ? '' : ''
-        : socket.clientName;
+      const senderType = socket.role === 'expert' ? 'EXPERT' : 'CLIENT';
 
-      let juristName = '';
-      if (socket.role === 'jurist') {
-        const j = await prisma.jurist.findUnique({ where: { id: socket.juristId }, select: { firstName: true, lastName: true } });
-        juristName = `${j.firstName} ${j.lastName}`;
+      let senderName = socket.clientName || '';
+      if (socket.role === 'expert') {
+        const e = await prisma.expert.findUnique({ where: { id: socket.expertId }, select: { firstName: true, lastName: true } });
+        senderName = e ? `${e.firstName} ${e.lastName}` : '';
       }
 
       const msg = await prisma.chatMessage.create({
-        data: {
-          conversationId,
-          senderType,
-          senderName: socket.role === 'jurist' ? juristName : socket.clientName,
-          body: body.trim(),
-        },
+        data: { conversationId, senderType, senderName, body: body.trim() },
       });
 
       await prisma.conversation.update({

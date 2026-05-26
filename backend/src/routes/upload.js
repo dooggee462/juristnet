@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
+  limits: { fileSize: 3 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -38,14 +38,13 @@ router.post('/avatar', requireAuth, upload.single('avatar'), async (req, res, ne
 
     const avatarUrl = `/uploads/${req.file.filename}`;
 
-    // Delete old avatar if exists
-    const old = await prisma.jurist.findUnique({ where: { id: req.jurist.id }, select: { avatarUrl: true } });
+    const old = await prisma.expert.findUnique({ where: { id: req.expert.id }, select: { avatarUrl: true } });
     if (old?.avatarUrl && old.avatarUrl.startsWith('/uploads/')) {
       const oldPath = path.join(uploadDir, path.basename(old.avatarUrl));
       if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
     }
 
-    await prisma.jurist.update({ where: { id: req.jurist.id }, data: { avatarUrl } });
+    await prisma.expert.update({ where: { id: req.expert.id }, data: { avatarUrl } });
 
     res.json({ avatarUrl });
   } catch (err) {

@@ -6,7 +6,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('jn_token');
+  const token = localStorage.getItem('em_token') || localStorage.getItem('jn_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -15,8 +15,9 @@ api.interceptors.response.use(
   (r) => r.data,
   (err) => {
     if (err.response?.status === 401) {
+      localStorage.removeItem('em_token');
       localStorage.removeItem('jn_token');
-      window.location.href = '/jurist/login';
+      window.location.href = '/expert/login';
     }
     return Promise.reject(err.response?.data || err);
   }

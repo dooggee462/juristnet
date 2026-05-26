@@ -12,22 +12,22 @@ const validate = [
   body('body').trim().isLength({ min: 10 }),
 ];
 
-// Public: client sends message to jurist
-router.post('/jurist/:juristId', validate, async (req, res, next) => {
+// Public: client sends message to expert
+router.post('/expert/:expertId', validate, async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
 
-    const jurist = await prisma.jurist.findUnique({ where: { id: req.params.juristId }, select: { id: true, isActive: true } });
-    if (!jurist?.isActive) return res.status(404).json({ error: 'Juristul nu este disponibil' });
+    const expert = await prisma.expert.findUnique({ where: { id: req.params.expertId }, select: { id: true, isActive: true } });
+    if (!expert?.isActive) return res.status(404).json({ error: 'Expertul nu este disponibil' });
 
     const { senderName, senderEmail, subject, body: msgBody } = req.body;
 
     const message = await prisma.message.create({
-      data: { juristId: req.params.juristId, senderName, senderEmail, subject, body: msgBody },
+      data: { expertId: req.params.expertId, senderName, senderEmail, subject, body: msgBody },
     });
 
-    await prisma.analyticsEvent.create({ data: { juristId: req.params.juristId, type: 'MESSAGE_SENT' } });
+    await prisma.analyticsEvent.create({ data: { expertId: req.params.expertId, type: 'MESSAGE_SENT' } });
 
     res.status(201).json({ message: 'Mesaj trimis cu succes', id: message.id });
   } catch (err) {
@@ -35,11 +35,11 @@ router.post('/jurist/:juristId', validate, async (req, res, next) => {
   }
 });
 
-// Private: jurist fetches own inbox
+// Private: expert fetches own inbox
 router.get('/inbox', requireAuth, async (req, res, next) => {
   try {
     const messages = await prisma.message.findMany({
-      where: { juristId: req.jurist.id },
+      where: { expertId: req.expert.id },
       orderBy: { createdAt: 'desc' },
     });
     res.json({ messages });
@@ -52,7 +52,7 @@ router.get('/inbox', requireAuth, async (req, res, next) => {
 router.patch('/:id/read', requireAuth, async (req, res, next) => {
   try {
     const msg = await prisma.message.findUnique({ where: { id: req.params.id } });
-    if (!msg || msg.juristId !== req.jurist.id) return res.status(403).json({ error: 'Acces interzis' });
+    if (!msg || msg.expertId !== req.expert.id) return res.status(403).json({ error: 'Acces interzis' });
     await prisma.message.update({ where: { id: req.params.id }, data: { isRead: true } });
     res.json({ ok: true });
   } catch (err) {

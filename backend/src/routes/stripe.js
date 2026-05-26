@@ -6,24 +6,23 @@ import { requireAuth } from '../middleware/auth.js';
 const router = Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Create checkout session
 router.post('/create-checkout', requireAuth, async (req, res, next) => {
   try {
-    const jurist = await prisma.jurist.findUnique({
-      where: { id: req.jurist.id },
+    const expert = await prisma.expert.findUnique({
+      where: { id: req.expert.id },
       select: { id: true, email: true, firstName: true, lastName: true, stripeCustomerId: true },
     });
 
-    let customerId = jurist?.stripeCustomerId;
+    let customerId = expert?.stripeCustomerId;
 
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: jurist.email,
-        name: `${jurist.firstName} ${jurist.lastName}`,
-        metadata: { juristId: jurist.id },
+        email: expert.email,
+        name: `${expert.firstName} ${expert.lastName}`,
+        metadata: { expertId: expert.id },
       });
       customerId = customer.id;
-      await prisma.jurist.update({ where: { id: jurist.id }, data: { stripeCustomerId: customerId } });
+      await prisma.expert.update({ where: { id: expert.id }, data: { stripeCustomerId: customerId } });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -32,7 +31,7 @@ router.post('/create-checkout', requireAuth, async (req, res, next) => {
       line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
       success_url: `${process.env.CLIENT_URL}/dashboard?sub=success`,
       cancel_url: `${process.env.CLIENT_URL}/dashboard?sub=canceled`,
-      metadata: { juristId: jurist.id },
+      metadata: { expertId: expert.id },
     });
 
     res.json({ url: session.url });
@@ -41,20 +40,19 @@ router.post('/create-checkout', requireAuth, async (req, res, next) => {
   }
 });
 
-// Create billing portal session
 router.post('/portal', requireAuth, async (req, res, next) => {
   try {
-    const jurist = await prisma.jurist.findUnique({
-      where: { id: req.jurist.id },
+    const expert = await prisma.expert.findUnique({
+      where: { id: req.expert.id },
       select: { stripeCustomerId: true },
     });
 
-    if (!jurist?.stripeCustomerId) {
+    if (!expert?.stripeCustomerId) {
       return res.status(400).json({ error: 'Niciun abonament activ' });
     }
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: jurist.stripeCustomerId,
+      customer: expert.stripeCustomerId,
       return_url: `${process.env.CLIENT_URL}/dashboard`,
     });
 
@@ -64,7 +62,6 @@ router.post('/portal', requireAuth, async (req, res, next) => {
   }
 });
 
-// Stripe webhook
 router.post('/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -76,7 +73,6 @@ router.post('/webhook', async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Idempotency check
   const existing = await prisma.stripeWebhookEvent.findUnique({ where: { id: event.id } });
   if (existing?.processed) return res.json({ received: true });
 
@@ -89,11 +85,11 @@ router.post('/webhook', async (req, res) => {
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const juristId = session.metadata?.juristId;
-      if (juristId && session.subscription) {
+      const expertId = session.metadata?.expertId;
+      if (expertId && session.subscription) {
         const sub = await stripe.subscriptions.retrieve(session.subscription);
-        await prisma.jurist.update({
-          where: { id: juristId },
+        await prisma.expert.update({
+          where: { id: expertId },
           data: {
             stripeSubId: sub.id,
             subStatus: mapStatus(sub.status),
@@ -105,10 +101,10 @@ router.post('/webhook', async (req, res) => {
 
     if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
       const sub = event.data.object;
-      const jurist = await prisma.jurist.findFirst({ where: { stripeSubId: sub.id } });
-      if (jurist) {
-        await prisma.jurist.update({
-          where: { id: jurist.id },
+      const expert = await prisma.expert.findFirst({ where: { stripeSubId: sub.id } });
+      if (expert) {
+        await prisma.expert.update({
+          where: { id: expert.id },
           data: {
             subStatus: mapStatus(sub.status),
             subCurrentEnd: new Date(sub.current_period_end * 1000),

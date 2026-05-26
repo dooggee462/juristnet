@@ -5,9 +5,9 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-// Client: start or get conversation with jurist
+// Client: start or get conversation with expert
 router.post('/start', [
-  body('juristId').notEmpty(),
+  body('expertId').notEmpty(),
   body('clientName').trim().notEmpty(),
   body('clientEmail').isEmail().normalizeEmail(),
 ], async (req, res, next) => {
@@ -15,14 +15,14 @@ router.post('/start', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
 
-    const { juristId, clientName, clientEmail } = req.body;
+    const { expertId, clientName, clientEmail } = req.body;
 
     const conversation = await prisma.conversation.upsert({
-      where: { juristId_clientEmail: { juristId, clientEmail } },
+      where: { expertId_clientEmail: { expertId, clientEmail } },
       update: {},
-      create: { juristId, clientName, clientEmail },
+      create: { expertId, clientName, clientEmail },
       include: {
-        jurist: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, isVerified: true } },
+        expert: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, isVerified: true } },
         chatMessages: { orderBy: { createdAt: 'asc' }, take: 50 },
       },
     });
@@ -39,7 +39,7 @@ router.get('/:id', async (req, res, next) => {
     const conv = await prisma.conversation.findUnique({
       where: { id: req.params.id },
       include: {
-        jurist: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, isVerified: true } },
+        expert: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, isVerified: true } },
         chatMessages: { orderBy: { createdAt: 'asc' } },
       },
     });
@@ -50,11 +50,11 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// Jurist: list all conversations
-router.get('/jurist/inbox', requireAuth, async (req, res, next) => {
+// Expert: list all conversations
+router.get('/expert/inbox', requireAuth, async (req, res, next) => {
   try {
     const conversations = await prisma.conversation.findMany({
-      where: { juristId: req.jurist.id },
+      where: { expertId: req.expert.id },
       orderBy: { lastAt: { sort: 'desc', nulls: 'last' } },
       include: {
         chatMessages: { orderBy: { createdAt: 'desc' }, take: 1 },

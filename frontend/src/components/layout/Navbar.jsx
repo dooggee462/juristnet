@@ -1,9 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Scale, LogOut, LayoutDashboard, Inbox } from 'lucide-react';
+import { Sparkles, LogOut, LayoutDashboard, Inbox } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore.js';
 
 export default function Navbar() {
-  const { jurist, logout } = useAuthStore();
+  const { expert, logout } = useAuthStore();
   const navigate = useNavigate();
 
   const handleLogout = () => { logout(); navigate('/'); };
@@ -13,16 +13,16 @@ export default function Navbar() {
       <nav className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 font-bold text-lg">
           <span className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
-            <Scale size={16} className="text-white" />
+            <Sparkles size={16} className="text-white" />
           </span>
-          <span className="text-gradient">JuristNet</span>
+          <span className="text-gradient">expert.md</span>
         </Link>
 
         <div className="flex items-center gap-2">
-          <Link to="/anunturi" className="text-sm text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
-            Anunțuri
+          <Link to="/experti" className="text-sm text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
+            Experți
           </Link>
-          {jurist ? (
+          {expert ? (
             <>
               <Link to="/dashboard" className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
                 <LayoutDashboard size={15} /> Panou
@@ -35,8 +35,8 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <Link to="/jurist/login" className="text-sm bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl font-medium transition-colors">
-              Intră ca Jurist
+            <Link to="/expert/login" className="text-sm bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl font-medium transition-colors">
+              Intră ca Expert
             </Link>
           )}
         </div>

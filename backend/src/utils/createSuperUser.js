@@ -4,12 +4,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const email = 'admin@juristnet.ro';
+const email = 'admin@expert.md';
 const password = 'Admin1234!';
 
 const hash = await bcrypt.hash(password, 12);
 
-const jurist = await prisma.jurist.upsert({
+const expert = await prisma.expert.upsert({
   where: { email },
   update: {
     subStatus: 'ACTIVE',
@@ -20,15 +20,16 @@ const jurist = await prisma.jurist.upsert({
     email,
     passwordHash: hash,
     firstName: 'Admin',
-    lastName: 'JuristNet',
-    country: 'România',
-    postalCode: '010101',
-    streetAddress: 'Str. Victoriei nr. 1',
-    phoneNumber: '+40 712 345 678',
-    city: 'București',
-    region: 'Ilfov',
+    lastName: 'Expert',
+    country: 'Republica Moldova',
+    postalCode: 'MD-2001',
+    streetAddress: 'Str. Ștefan cel Mare nr. 1',
+    phoneNumber: '+373 69 000 000',
+    city: 'Chișinău',
+    region: 'Chișinău',
+    category: 'Juridic',
     bio: 'Cont de test cu acces complet.',
-    areasOfExpertise: ['Drept civil', 'Drept penal', 'Dreptul familiei'],
+    areasOfExpertise: ['Avocat', 'Notar', 'Jurist'],
     spokenLanguages: ['Română', 'Engleză'],
     isVerified: true,
     subStatus: 'ACTIVE',
@@ -39,6 +40,6 @@ const jurist = await prisma.jurist.upsert({
 console.log('✅ Super user creat/actualizat:');
 console.log('   Email:   ', email);
 console.log('   Parolă:  ', password);
-console.log('   ID:      ', jurist.id);
+console.log('   ID:      ', expert.id);
 
 await prisma.$disconnect();

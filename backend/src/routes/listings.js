@@ -6,13 +6,14 @@ const router = Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const { expertise, city, language, page = 1, limit = 12 } = req.query;
+    const { expertise, city, language, category, page = 1, limit = 12 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const where = {
       isActive: true,
-      jurist: { subStatus: 'ACTIVE', isActive: true },
+      expert: { subStatus: 'ACTIVE', isActive: true },
       ...(city && { city: { contains: city, mode: 'insensitive' } }),
+      ...(category && { category: { equals: category, mode: 'insensitive' } }),
       ...(expertise && { expertise: { has: expertise } }),
       ...(language && { languages: { has: language } }),
     };
@@ -24,8 +25,8 @@ router.get('/', async (req, res, next) => {
         take: Number(limit),
         orderBy: { createdAt: 'desc' },
         include: {
-          jurist: {
-            select: { id: true, firstName: true, lastName: true, isVerified: true, avatarUrl: true, city: true },
+          expert: {
+            select: { id: true, firstName: true, lastName: true, isVerified: true, avatarUrl: true, city: true, category: true },
           },
           reviews: { select: { rating: true } },
         },
@@ -44,7 +45,7 @@ router.get('/:id', async (req, res, next) => {
     const listing = await prisma.listing.findUnique({
       where: { id: req.params.id },
       include: {
-        jurist: { select: { id: true, firstName: true, lastName: true, isVerified: true, avatarUrl: true, bio: true, city: true, areasOfExpertise: true } },
+        expert: { select: { id: true, firstName: true, lastName: true, isVerified: true, avatarUrl: true, bio: true, city: true, category: true, areasOfExpertise: true } },
         reviews: { orderBy: { createdAt: 'desc' } },
       },
     });
@@ -57,14 +58,14 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', requireAuth, async (req, res, next) => {
   try {
-    const jurist = await prisma.jurist.findUnique({ where: { id: req.jurist.id }, select: { subStatus: true } });
-    if (jurist?.subStatus !== 'ACTIVE') {
+    const expert = await prisma.expert.findUnique({ where: { id: req.expert.id }, select: { subStatus: true } });
+    if (expert?.subStatus !== 'ACTIVE') {
       return res.status(403).json({ error: 'Abonament inactiv. Activați un abonament pentru a posta anunțuri.' });
     }
 
-    const { title, description, expertise, languages, city, region } = req.body;
+    const { title, description, category, expertise, languages, city, region } = req.body;
     const listing = await prisma.listing.create({
-      data: { juristId: req.jurist.id, title, description, expertise, languages, city, region },
+      data: { expertId: req.expert.id, title, description, category, expertise, languages, city: city || '', region: region || '' },
     });
     res.status(201).json({ listing });
   } catch (err) {
@@ -75,13 +76,13 @@ router.post('/', requireAuth, async (req, res, next) => {
 router.put('/:id', requireAuth, async (req, res, next) => {
   try {
     const existing = await prisma.listing.findUnique({ where: { id: req.params.id } });
-    if (!existing || existing.juristId !== req.jurist.id) {
+    if (!existing || existing.expertId !== req.expert.id) {
       return res.status(403).json({ error: 'Acces interzis' });
     }
-    const { title, description, expertise, languages, city, region, isActive } = req.body;
+    const { title, description, category, expertise, languages, city, region, isActive } = req.body;
     const listing = await prisma.listing.update({
       where: { id: req.params.id },
-      data: { title, description, expertise, languages, city, region, isActive },
+      data: { title, description, category, expertise, languages, city, region, isActive },
     });
     res.json({ listing });
   } catch (err) {
@@ -92,7 +93,7 @@ router.put('/:id', requireAuth, async (req, res, next) => {
 router.delete('/:id', requireAuth, async (req, res, next) => {
   try {
     const existing = await prisma.listing.findUnique({ where: { id: req.params.id } });
-    if (!existing || existing.juristId !== req.jurist.id) {
+    if (!existing || existing.expertId !== req.expert.id) {
       return res.status(403).json({ error: 'Acces interzis' });
     }
     await prisma.listing.delete({ where: { id: req.params.id } });

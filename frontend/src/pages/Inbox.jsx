@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import Navbar from '../components/layout/Navbar.jsx';
-import { JuristChatPanel } from '../components/ui/ChatModal.jsx';
+import { ExpertChatPanel } from '../components/ui/ChatModal.jsx';
 import { useAuthStore } from '../store/authStore.js';
 import api from '../lib/api.js';
 
@@ -12,7 +12,7 @@ export default function Inbox() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/chat/jurist/inbox').then((d) => {
+    api.get('/chat/expert/inbox').then((d) => {
       setConversations(d.conversations);
       setLoading(false);
     });
@@ -73,7 +73,7 @@ export default function Inbox() {
           {/* Chat panel */}
           <div className="lg:col-span-3 glass rounded-2xl border border-white/08 p-5 flex flex-col overflow-hidden">
             {selected ? (
-              <JuristChatPanel conversation={selected} token={token} onClose={() => setSelected(null)} />
+              <ExpertChatPanel conversation={selected} token={token} onClose={() => setSelected(null)} />
             ) : (
               <div className="flex-1 flex items-center justify-center text-white/25">
                 <div className="text-center">

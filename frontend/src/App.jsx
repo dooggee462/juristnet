@@ -4,14 +4,14 @@ import { useAuthStore } from './store/authStore.js';
 
 import Landing from './pages/Landing.jsx';
 import Listings from './pages/Listings.jsx';
-import JuristProfile from './pages/JuristProfile.jsx';
-import JuristAuth from './pages/JuristAuth.jsx';
+import ExpertProfile from './pages/ExpertProfile.jsx';
+import ExpertAuth from './pages/ExpertAuth.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Inbox from './pages/Inbox.jsx';
 
 function PrivateRoute({ children }) {
   const token = useAuthStore((s) => s.token);
-  return token ? children : <Navigate to="/jurist/login" replace />;
+  return token ? children : <Navigate to="/expert/login" replace />;
 }
 
 export default function App() {
@@ -26,10 +26,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/anunturi" element={<Listings />} />
-        <Route path="/jurist/:id" element={<JuristProfile />} />
-        <Route path="/jurist/login" element={<JuristAuth mode="login" />} />
-        <Route path="/jurist/inregistrare" element={<JuristAuth mode="register" />} />
+        <Route path="/experti" element={<Listings />} />
+        <Route path="/expert/:id" element={<ExpertProfile />} />
+        <Route path="/expert/login" element={<ExpertAuth mode="login" />} />
+        <Route path="/expert/inregistrare" element={<ExpertAuth mode="register" />} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/inbox" element={<PrivateRoute><Inbox /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />

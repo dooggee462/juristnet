@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '../components/layout/Navbar.jsx';
 import { VerifiedBadge } from '../components/ui/Badge.jsx';
 import { StarDisplay } from '../components/ui/StarRating.jsx';
-import { MOLDOVA_REGIONS, EXPERTISE_OPTIONS, LANGUAGE_OPTIONS } from '../lib/constants.js';
+import { MOLDOVA_REGIONS, CATEGORIES, LANGUAGE_OPTIONS } from '../lib/constants.js';
 import api from '../lib/api.js';
 
 function avgRating(reviews) {
@@ -12,11 +12,11 @@ function avgRating(reviews) {
   return reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
 }
 
-function Avatar({ jurist, size = 12 }) {
-  const initials = `${jurist.firstName?.[0] ?? ''}${jurist.lastName?.[0] ?? ''}`;
+function Avatar({ expert, size = 12 }) {
+  const initials = `${expert.firstName?.[0] ?? ''}${expert.lastName?.[0] ?? ''}`;
   const sizeClass = `w-${size} h-${size}`;
-  if (jurist.avatarUrl) {
-    return <img src={jurist.avatarUrl} alt="" className={`${sizeClass} rounded-2xl object-cover flex-shrink-0`} />;
+  if (expert.avatarUrl) {
+    return <img src={expert.avatarUrl} alt="" className={`${sizeClass} rounded-2xl object-cover flex-shrink-0`} />;
   }
   return (
     <div className={`${sizeClass} rounded-2xl bg-brand-600/20 flex items-center justify-center text-brand-300 font-bold text-lg flex-shrink-0`}>
@@ -25,33 +25,38 @@ function Avatar({ jurist, size = 12 }) {
   );
 }
 
-function JuristCard({ jurist }) {
+function ExpertCard({ expert }) {
   const navigate = useNavigate();
-  const avg = avgRating(jurist.reviews);
+  const avg = avgRating(expert.reviews);
 
   return (
-    <button onClick={() => navigate(`/jurist/${jurist.id}`)} className="bento-card p-6 text-left w-full group">
+    <button onClick={() => navigate(`/expert/${expert.id}`)} className="bento-card p-6 text-left w-full group">
       <div className="flex items-start gap-4 mb-4">
-        <Avatar jurist={jurist} size={12} />
+        <Avatar expert={expert} size={12} />
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-sm">{jurist.firstName} {jurist.lastName}</h3>
-            {jurist.isVerified && <VerifiedBadge />}
+            <h3 className="font-semibold text-sm">{expert.firstName} {expert.lastName}</h3>
+            {expert.isVerified && <VerifiedBadge />}
           </div>
-          <p className="text-xs text-white/40 mt-0.5">{jurist.city ?? 'Moldova'}</p>
+          {expert.category && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-300 border border-brand-500/20 mt-1 inline-block">
+              {expert.category}
+            </span>
+          )}
+          <p className="text-xs text-white/40 mt-0.5">{expert.city ?? 'Moldova'}</p>
         </div>
       </div>
 
-      {jurist.bio && <p className="text-xs text-white/50 leading-relaxed mb-4 line-clamp-2">{jurist.bio}</p>}
+      {expert.bio && <p className="text-xs text-white/50 leading-relaxed mb-4 line-clamp-2">{expert.bio}</p>}
 
       <div className="flex flex-wrap gap-1.5 mb-4">
-        {(jurist.areasOfExpertise ?? []).slice(0, 3).map((e) => (
-          <span key={e} className="text-xs px-2 py-0.5 rounded-full bg-brand-600/15 text-brand-300 border border-brand-500/20">{e}</span>
+        {(expert.areasOfExpertise ?? []).slice(0, 3).map((e) => (
+          <span key={e} className="text-xs px-2 py-0.5 rounded-full bg-white/05 border border-white/10 text-white/50">{e}</span>
         ))}
       </div>
 
       <div className="flex items-center justify-between">
-        <StarDisplay value={avg} total={jurist.reviews?.length} />
+        <StarDisplay value={avg} total={expert.reviews?.length} />
         <span className="text-xs text-white/30 group-hover:text-brand-400 transition-colors">Vezi profil →</span>
       </div>
     </button>
@@ -59,27 +64,37 @@ function JuristCard({ jurist }) {
 }
 
 export default function Listings() {
-  const [jurists, setJurists] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [experts, setExperts] = useState([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [expertise, setExpertise] = useState('');
+  const [category, setCategory] = useState(searchParams.get('category') || '');
   const [city, setCity] = useState('');
   const [language, setLanguage] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const fetchJurists = useCallback(async () => {
+  // Apply category from URL on mount
+  useEffect(() => {
+    const urlCat = searchParams.get('category');
+    if (urlCat) {
+      const found = CATEGORIES.find((c) => c.slug === urlCat);
+      if (found) setCategory(found.name);
+    }
+  }, []);
+
+  const fetchExperts = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, limit: 12 });
       if (search) params.set('search', search);
-      if (expertise) params.set('expertise', expertise);
+      if (category) params.set('category', category);
       if (city) params.set('city', city);
       if (language) params.set('language', language);
-      const data = await api.get(`/jurists?${params}`);
-      setJurists(data.jurists);
+      const data = await api.get(`/experts?${params}`);
+      setExperts(data.experts);
       setTotal(data.total);
       setPages(data.pages);
     } catch (e) {
@@ -87,27 +102,50 @@ export default function Listings() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, expertise, city, language]);
+  }, [page, search, category, city, language]);
 
-  useEffect(() => { fetchJurists(); }, [fetchJurists]);
+  useEffect(() => { fetchExperts(); }, [fetchExperts]);
 
-  const clearFilters = () => { setExpertise(''); setCity(''); setLanguage(''); setSearch(''); setPage(1); };
-  const hasFilters = expertise || city || language || search;
+  const clearFilters = () => { setCategory(''); setCity(''); setLanguage(''); setSearch(''); setPage(1); setSearchParams({}); };
+  const hasFilters = category || city || language || search;
+
+  const handleCategoryChip = (cat) => {
+    setCategory((prev) => prev === cat.name ? '' : cat.name);
+    setPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-[#0f0f13]">
       <Navbar />
       <main className="pt-24 pb-16 max-w-7xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-1">Juriști disponibili</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-1">Experți disponibili</h1>
           <p className="text-white/40 text-sm">{total} specialiști înregistrați în Republica Moldova</p>
         </div>
 
-        <div className="glass rounded-2xl p-4 mb-8 flex flex-col sm:flex-row gap-3">
+        {/* Category chips */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.slug}
+              onClick={() => handleCategoryChip(cat)}
+              className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
+                category === cat.name
+                  ? 'bg-brand-600/30 border-brand-500/50 text-brand-300'
+                  : 'bg-white/05 border-white/10 text-white/60 hover:border-white/25 hover:text-white/80'
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Search bar */}
+        <div className="glass rounded-2xl p-4 mb-6 flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
             <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Căutați după nume sau specializare..."
+              placeholder="Căutați după nume, specializare sau localitate..."
               className="w-full bg-white/05 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-brand-500/50" />
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
@@ -122,15 +160,7 @@ export default function Listings() {
         </div>
 
         {showFilters && (
-          <div className="glass rounded-2xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-white/40 mb-2">Domeniu de drept</label>
-              <select value={expertise} onChange={(e) => { setExpertise(e.target.value); setPage(1); }}
-                className="w-full bg-white/05 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50">
-                <option value="">Toate domeniile</option>
-                {EXPERTISE_OPTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
-              </select>
-            </div>
+          <div className="glass rounded-2xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-white/40 mb-2">Localitate / Raion</label>
               <select value={city} onChange={(e) => { setCity(e.target.value); setPage(1); }}
@@ -154,14 +184,14 @@ export default function Listings() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => <div key={i} className="bento-card h-48 animate-pulse" />)}
           </div>
-        ) : jurists.length === 0 ? (
+        ) : experts.length === 0 ? (
           <div className="text-center py-20 text-white/30">
-            <p className="text-xl font-semibold mb-2">Niciun jurist găsit</p>
+            <p className="text-xl font-semibold mb-2">Niciun expert găsit</p>
             <p className="text-sm">Încercați să modificați filtrele de căutare</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {jurists.map((j) => <JuristCard key={j.id} jurist={j} />)}
+            {experts.map((e) => <ExpertCard key={e.id} expert={e} />)}
           </div>
         )}
 

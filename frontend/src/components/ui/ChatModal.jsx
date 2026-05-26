@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Send, Loader } from 'lucide-react';
 import { getSocket } from '../../lib/socket.js';
 import api from '../../lib/api.js';
@@ -15,8 +15,8 @@ function Avatar({ name, avatarUrl, size = 8 }) {
   );
 }
 
-// Client-facing chat modal — opened from JuristProfile
-export function ClientChatModal({ jurist, onClose }) {
+// Client-facing chat modal — opened from ExpertProfile
+export function ClientChatModal({ expert, onClose }) {
   const [step, setStep] = useState('identify'); // identify | chat
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -36,7 +36,7 @@ export function ClientChatModal({ jurist, onClose }) {
     setLoading(true);
     try {
       const data = await api.post('/chat/start', {
-        juristId: jurist.id,
+        expertId: expert.id,
         clientName: clientName.trim(),
         clientEmail: clientEmail.trim().toLowerCase(),
       });
@@ -67,10 +67,10 @@ export function ClientChatModal({ jurist, onClose }) {
       <div className="glass border border-white/10 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md flex flex-col" style={{ height: '85vh', maxHeight: 600 }}>
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-white/08">
-          <Avatar name={`${jurist.firstName} ${jurist.lastName}`} avatarUrl={jurist.avatarUrl} size={10} />
+          <Avatar name={`${expert.firstName} ${expert.lastName}`} avatarUrl={expert.avatarUrl} size={10} />
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">{jurist.firstName} {jurist.lastName}</p>
-            <p className="text-xs text-white/40">Jurist</p>
+            <p className="font-semibold text-sm truncate">{expert.firstName} {expert.lastName}</p>
+            <p className="text-xs text-white/40">Expert</p>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><X size={18} /></button>
         </div>
@@ -98,7 +98,7 @@ export function ClientChatModal({ jurist, onClose }) {
                 const isClient = m.senderType === 'CLIENT';
                 return (
                   <div key={m.id} className={`flex gap-2 ${isClient ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <Avatar name={m.senderName} avatarUrl={isClient ? null : jurist.avatarUrl} size={7} />
+                    <Avatar name={m.senderName} avatarUrl={isClient ? null : expert.avatarUrl} size={7} />
                     <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${isClient ? 'bg-brand-600/30 text-white rounded-tr-sm' : 'bg-white/08 text-white/90 rounded-tl-sm'}`}>
                       <p className="leading-relaxed">{m.body}</p>
                       <p className={`text-xs mt-1 ${isClient ? 'text-brand-300/60' : 'text-white/30'}`}>
@@ -126,8 +126,8 @@ export function ClientChatModal({ jurist, onClose }) {
   );
 }
 
-// Jurist-facing chat panel — used in Inbox page
-export function JuristChatPanel({ conversation, token, onClose }) {
+// Expert-facing chat panel — used in Inbox page
+export function ExpertChatPanel({ conversation, token, onClose }) {
   const [messages, setMessages] = useState(conversation.chatMessages || []);
   const [text, setText] = useState('');
   const bottomRef = useRef(null);
@@ -169,13 +169,13 @@ export function JuristChatPanel({ conversation, token, onClose }) {
           <p className="text-center text-xs text-white/30 py-6">Niciun mesaj</p>
         )}
         {messages.map((m) => {
-          const isJurist = m.senderType === 'JURIST';
+          const isExpert = m.senderType === 'EXPERT';
           return (
-            <div key={m.id} className={`flex gap-2 ${isJurist ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div key={m.id} className={`flex gap-2 ${isExpert ? 'flex-row-reverse' : 'flex-row'}`}>
               <Avatar name={m.senderName} size={7} />
-              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${isJurist ? 'bg-brand-600/30 text-white rounded-tr-sm' : 'bg-white/08 text-white/90 rounded-tl-sm'}`}>
+              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${isExpert ? 'bg-brand-600/30 text-white rounded-tr-sm' : 'bg-white/08 text-white/90 rounded-tl-sm'}`}>
                 <p className="leading-relaxed">{m.body}</p>
-                <p className={`text-xs mt-1 ${isJurist ? 'text-brand-300/60' : 'text-white/30'}`}>
+                <p className={`text-xs mt-1 ${isExpert ? 'text-brand-300/60' : 'text-white/30'}`}>
                   {new Date(m.createdAt).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>

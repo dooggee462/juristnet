@@ -7,7 +7,7 @@ export function requireAuth(req, res, next) {
   }
   try {
     const token = header.split(' ')[1];
-    req.jurist = jwt.verify(token, process.env.JWT_SECRET);
+    req.expert = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch {
     res.status(401).json({ error: 'Token invalid sau expirat' });

@@ -10,7 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.js';
-import juristRoutes from './routes/jurists.js';
+import expertRoutes from './routes/jurists.js';
 import listingRoutes from './routes/listings.js';
 import reviewRoutes from './routes/reviews.js';
 import messageRoutes from './routes/messages.js';
@@ -18,6 +18,7 @@ import stripeRoutes from './routes/stripe.js';
 import analyticsRoutes from './routes/analytics.js';
 import uploadRoutes from './routes/upload.js';
 import chatRoutes from './routes/chat.js';
+import categoryRoutes from './routes/categories.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSocket } from './socket/index.js';
 
@@ -54,7 +55,7 @@ const uploadsDir = path.join(__dirname, '../../uploads');
 app.use('/uploads', express.static(uploadsDir));
 
 app.use('/api/auth', authRoutes);
-app.use('/api/jurists', juristRoutes);
+app.use('/api/experts', expertRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/messages', messageRoutes);
@@ -62,6 +63,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/categories', categoryRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Jurist {
+model Expert {
   id                 String           @id @default(cuid())
   email              String           @unique
   passwordHash       String
@@ -18,6 +18,7 @@ model Jurist {
   streetAddress      String
   phoneNumber        String
   bio                String?          @db.Text
+  category           String?
   areasOfExpertise   String[]
   spokenLanguages    String[]
   city               String?
@@ -42,58 +43,59 @@ model Jurist {
 
 model Listing {
   id          String   @id @default(cuid())
-  juristId    String
+  expertId    String
   title       String
   description String   @db.Text
+  category    String?
   expertise   String[]
   languages   String[]
-  city        String
-  region      String
+  city        String   @default("")
+  region      String   @default("")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  jurist      Jurist   @relation(fields: [juristId], references: [id], onDelete: Cascade)
+  expert      Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
   reviews     Review[]
 }
 
 model Review {
   id          String   @id @default(cuid())
   listingId   String
-  juristId    String
+  expertId    String
   clientName  String
   clientEmail String?
   rating      Int
   body        String   @db.Text
   createdAt   DateTime @default(now())
   listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  jurist      Jurist   @relation(fields: [juristId], references: [id], onDelete: Cascade)
+  expert      Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
 }
 
 model Message {
   id          String   @id @default(cuid())
-  juristId    String
+  expertId    String
   senderName  String
   senderEmail String
   subject     String
   body        String   @db.Text
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
-  jurist      Jurist   @relation("ReceivedMessages", fields: [juristId], references: [id], onDelete: Cascade)
+  expert      Expert   @relation("ReceivedMessages", fields: [expertId], references: [id], onDelete: Cascade)
 }
 
 model Conversation {
   id           String        @id @default(cuid())
-  juristId     String
+  expertId     String
   clientName   String
   clientEmail  String
   lastMessage  String?       @db.Text
   lastAt       DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  jurist       Jurist        @relation(fields: [juristId], references: [id], onDelete: Cascade)
+  expert       Expert        @relation(fields: [expertId], references: [id], onDelete: Cascade)
   chatMessages ChatMessage[]
 
-  @@unique([juristId, clientEmail])
+  @@unique([expertId, clientEmail])
 }
 
 model ChatMessage {
@@ -108,11 +110,25 @@ model ChatMessage {
 
 model AnalyticsEvent {
   id        String    @id @default(cuid())
-  juristId  String
+  expertId  String
   type      EventType
   metadata  Json?
   createdAt DateTime  @default(now())
-  jurist    Jurist    @relation(fields: [juristId], references: [id], onDelete: Cascade)
+  expert    Expert    @relation(fields: [expertId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id             String          @id @default(cuid())
+  name           String          @unique
+  slug           String          @unique
+  subProfessions SubProfession[]
+}
+
+model SubProfession {
+  id         String   @id @default(cuid())
+  name       String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 model StripeWebhookEvent {
@@ -139,5 +155,5 @@ enum EventType {
 
 enum SenderType {
   CLIENT
-  JURIST
+  EXPERT
 }

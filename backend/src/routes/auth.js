@@ -24,23 +24,23 @@ router.post('/register', registerValidation, async (req, res, next) => {
       return res.status(422).json({ errors: errors.array() });
     }
 
-    const { email, password, firstName, lastName, country, postalCode, streetAddress, phoneNumber } = req.body;
+    const { email, password, firstName, lastName, country, postalCode, streetAddress, phoneNumber, category, areasOfExpertise, spokenLanguages, city, region, bio } = req.body;
 
-    const existing = await prisma.jurist.findUnique({ where: { email } });
+    const existing = await prisma.expert.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ error: 'Email deja înregistrat' });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const jurist = await prisma.jurist.create({
-      data: { email, passwordHash, firstName, lastName, country, postalCode, streetAddress, phoneNumber },
-      select: { id: true, email: true, firstName: true, lastName: true, isVerified: true, subStatus: true },
+    const expert = await prisma.expert.create({
+      data: { email, passwordHash, firstName, lastName, country, postalCode, streetAddress, phoneNumber, category, areasOfExpertise, spokenLanguages, city, region, bio },
+      select: { id: true, email: true, firstName: true, lastName: true, isVerified: true, subStatus: true, category: true },
     });
 
-    const token = jwt.sign({ id: jurist.id, email: jurist.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: expert.id, email: expert.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    res.status(201).json({ token, jurist });
+    res.status(201).json({ token, expert });
   } catch (err) {
     next(err);
   }
@@ -53,20 +53,20 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ error: 'Email și parola sunt obligatorii' });
     }
 
-    const jurist = await prisma.jurist.findUnique({ where: { email: email.toLowerCase().trim() } });
-    if (!jurist) {
+    const expert = await prisma.expert.findUnique({ where: { email: email.toLowerCase().trim() } });
+    if (!expert) {
       return res.status(401).json({ error: 'Credențiale invalide' });
     }
 
-    const valid = await bcrypt.compare(password, jurist.passwordHash);
+    const valid = await bcrypt.compare(password, expert.passwordHash);
     if (!valid) {
       return res.status(401).json({ error: 'Credențiale invalide' });
     }
 
-    const token = jwt.sign({ id: jurist.id, email: jurist.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: expert.id, email: expert.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    const { passwordHash: _, ...juristData } = jurist;
-    res.json({ token, jurist: juristData });
+    const { passwordHash: _, ...expertData } = expert;
+    res.json({ token, expert: expertData });
   } catch (err) {
     next(err);
   }
@@ -78,12 +78,12 @@ router.get('/me', async (req, res, next) => {
     if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Neautorizat' });
 
     const payload = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
-    const jurist = await prisma.jurist.findUnique({
+    const expert = await prisma.expert.findUnique({
       where: { id: payload.id },
-      select: { id: true, email: true, firstName: true, lastName: true, isVerified: true, subStatus: true, subCurrentEnd: true, avatarUrl: true, city: true, region: true, areasOfExpertise: true, spokenLanguages: true, bio: true },
+      select: { id: true, email: true, firstName: true, lastName: true, isVerified: true, subStatus: true, subCurrentEnd: true, avatarUrl: true, city: true, region: true, category: true, areasOfExpertise: true, spokenLanguages: true, bio: true },
     });
-    if (!jurist) return res.status(404).json({ error: 'Nu există' });
-    res.json({ jurist });
+    if (!expert) return res.status(404).json({ error: 'Nu există' });
+    res.json({ expert });
   } catch {
     res.status(401).json({ error: 'Token invalid' });
   }
